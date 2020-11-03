@@ -1,5 +1,6 @@
 #include <sstream>
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 
 // Make code easier to type with "using namespace"
 using namespace sf;
@@ -7,8 +8,13 @@ using namespace sf;
 // Function declaration
 void updateBranches(int seed);
 
+// Number of branches
 const int NUM_BRANCHES = 6;
 Sprite branches[NUM_BRANCHES];
+
+// Number of clouds
+const int NUM_CLOUDS = 6;
+Sprite clouds[NUM_CLOUDS];
 
 // Where is the player/branch, left or right?
 enum class side { LEFT, RIGHT, NONE };
@@ -198,6 +204,25 @@ int main()
 	// Control the player input
 	bool acceptInput = false;
 
+	// Prepare the sounds
+	// The player chopping sound
+	SoundBuffer chopBuffer;
+	chopBuffer.loadFromFile("Sound/chop.wav");
+	Sound chop;
+	chop.setBuffer(chopBuffer);
+
+	// The player death
+	SoundBuffer deathBuffer;
+	deathBuffer.loadFromFile("Sound/death.wav");
+	Sound death;
+	death.setBuffer(deathBuffer);
+
+	// Out of time
+	SoundBuffer ootBuffer;
+	ootBuffer.loadFromFile("Sound/out_of_time.wav");
+	Sound outOfTime;
+	outOfTime.setBuffer(ootBuffer);
+
 	while (window.isOpen())
 	{
 		/*
@@ -275,6 +300,9 @@ int main()
 				logActive = true;
 
 				acceptInput = false;
+
+				// PLay a chop sound
+				chop.play();
 			}
 
 			if (Keyboard::isKeyPressed(Keyboard::Left))
@@ -299,6 +327,9 @@ int main()
 				logActive = true;
 
 				acceptInput = false;
+
+				// PLay a chop sound
+				chop.play();
 			}
 		}
 
@@ -315,6 +346,7 @@ int main()
 
 			// Subtract from the amount of time remaining
 			timeRemaining -= dt.asSeconds();
+
 			// Size up the time bar
 			timeBar.setSize(Vector2f(timeBarWidthPerSecond * timeRemaining, timeBarHeight));
 
@@ -328,12 +360,16 @@ int main()
 
 				// Reposition the text based on its new size
 				FloatRect textRect = messageText.getLocalBounds();
+
 				messageText.setOrigin(textRect.left +
 					textRect.width / 2.0f,
 					textRect.top +
 					textRect.height / 2.0f);
+
 				messageText.setPosition(1920 / 2.0f, 1080 / 2.0f);
 
+				// Play the out of time sound
+				outOfTime.play();
 			}
 
 			// Setup the bee
@@ -525,7 +561,34 @@ int main()
 					logActive = false;
 					spriteLog.setPosition(810, 720);
 				}
+			}
 
+			// Has the player been squished by a branch?
+			if (branchPositions[5] == playerSide)
+			{
+				// Death
+				paused = true;
+				acceptInput = false;
+
+				// Draw the gravestone
+				spriteRIP.setPosition(525, 760);
+
+				// Hide the player
+				spritePlayer.setPosition(2000, 660);
+
+				// Change the text of the message
+				messageText.setString("SQUISHED!");
+
+				// Center it on the screen
+				FloatRect textRect = messageText.getLocalBounds();
+
+				messageText.setOrigin(textReact.left + textReact.width / 2.0f,
+					textReact.top + textReact.height / 2.0f);
+
+				messageText.setPosition(1920 / 2.0, 1080 / 2.0f);
+
+				// PLay the death sound
+				death.play();
 			}
 
 		} // End if paused
